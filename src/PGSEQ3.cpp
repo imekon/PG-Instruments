@@ -72,7 +72,8 @@ struct PGSEQ3 : Module
 
 	void onRandomize() override 
     {
-		for (int i = 0; i < NUM_SEQ_STEPS; i++) {
+		for (int i = 0; i < NUM_SEQ_STEPS; i++)
+        {
 			gates[i] = (randomUniform() > 0.5f);
 		}
 	}
@@ -127,7 +128,8 @@ struct PGSEQ3 : Module
 	void step() override 
     {
 		// Run
-		if (runningTrigger.process(params[RUN_PARAM].value)) {
+		if (runningTrigger.process(params[RUN_PARAM].value))
+        {
 			running = !running;
 		}
 
@@ -229,7 +231,7 @@ struct PGSEQ3Widget : ModuleWidget
 
 		for (int i = 0; i < NUM_SEQ_STEPS; i++) 
         {
-			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 157), module, PGSEQ3::ROW1_PARAM + i, 0.0f, 10.0f, 0.0f));
+			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 157), module, PGSEQ3::ROW1_PARAM + i, 0.0f, 10.0f, 3.0f));
 			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 198), module, PGSEQ3::ROW2_PARAM + i, 0.0f, 10.0f, 0.0f));
 			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 240), module, PGSEQ3::ROW3_PARAM + i, 0.0f, 10.0f, 0.0f));
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+2, 278-1), module, PGSEQ3::GATE_PARAM + i, 0.0f, 1.0f, 0.0f));
