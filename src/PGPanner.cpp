@@ -71,12 +71,12 @@ struct PGPannerWidget : ModuleWidget
 		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-        addParam(ParamWidget::create<RoundLargeBlackKnob>(Vec(54, 40), module, PGPanner::PAN_PARAM, 0.0f, 1.0, 0.5f));
+        addParam(ParamWidget::create<RoundLargeBlackKnob>(Vec(20, 40), module, PGPanner::PAN_PARAM, 0.0f, 1.0, 0.5f));
         
-        addInput(Port::create<PJ301MPort>(Vec(60, 100), Port::INPUT, module, PGPanner::INPUT));
-        addInput(Port::create<PJ301MPort>(Vec(60, 160), Port::INPUT, module, PGPanner::PAN_INPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(40, 220), Port::OUTPUT, module, PGPanner::LEFT_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(80, 220), Port::OUTPUT, module, PGPanner::RIGHT_OUTPUT));
+        addInput(Port::create<PJ301MPort>(Vec(26, 100), Port::INPUT, module, PGPanner::INPUT));
+        addInput(Port::create<PJ301MPort>(Vec(26, 160), Port::INPUT, module, PGPanner::PAN_INPUT));
+        addOutput(Port::create<PJ301MPort>(Vec(12, 220), Port::OUTPUT, module, PGPanner::LEFT_OUTPUT));
+        addOutput(Port::create<PJ301MPort>(Vec(42, 220), Port::OUTPUT, module, PGPanner::RIGHT_OUTPUT));
     }
 };
 
