@@ -80,4 +80,4 @@ struct PGPannerWidget : ModuleWidget
     }
 };
 
-Model *modelPGPanner = Model::create<PGPanner, PGPannerWidget>("PG-Experimental", "PGPanner", "PG Panner", ATTENUATOR_TAG);
+Model *modelPGPanner = Model::create<PGPanner, PGPannerWidget>("PG-Instruments", "PGPanner", "PG Panner", ATTENUATOR_TAG);

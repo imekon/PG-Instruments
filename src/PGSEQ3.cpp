@@ -241,4 +241,4 @@ struct PGSEQ3Widget : ModuleWidget
 	}
 };
 
-Model *modelPGSEQ3 = Model::create<PGSEQ3, PGSEQ3Widget>("PG-Experimental", "PGSEQ3", "PG-SEQ-3", SEQUENCER_TAG);
+Model *modelPGSEQ3 = Model::create<PGSEQ3, PGSEQ3Widget>("PG-Instruments", "PGSEQ3", "PG-SEQ-3", SEQUENCER_TAG);
