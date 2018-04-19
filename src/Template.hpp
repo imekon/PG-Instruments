@@ -9,3 +9,4 @@ extern Plugin *plugin;
 extern Model *modelPGSEQ3;
 extern Model *modelPGPanner;
 extern Model *modelPGQuadPanner;
+extern Model *modelPGVCF;
