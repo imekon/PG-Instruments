@@ -22,3 +22,6 @@ Quad panner - four mono inputs, each with their own panner and level control. On
 
 Voltage Controlled Filter
 
+## PG Stereo VCF
+
+Voltage Controlled Stereo Filter
