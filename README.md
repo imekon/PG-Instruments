@@ -25,3 +25,8 @@ Voltage Controlled Filter
 ## PG Stereo VCF
 
 Voltage Controlled Stereo Filter
+
+## PG Echo
+
+Echo/delay
+
