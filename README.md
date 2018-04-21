@@ -30,3 +30,6 @@ Voltage Controlled Stereo Filter
 
 Echo/delay
 
+## PG Stereo Echo
+
+Stereo echo/delay

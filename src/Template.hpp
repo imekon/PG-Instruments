@@ -12,3 +12,5 @@ extern Model *modelPGQuadPanner;
 extern Model *modelPGVCF;
 extern Model *modelPGStereoVCF;
 extern Model *modelPGEcho;
+extern Model *modelPGStereoEcho;
+
