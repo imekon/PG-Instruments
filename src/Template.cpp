@@ -14,6 +14,7 @@ void init(Plugin *p)
 	p->addModel(modelPGSEQ3);
     p->addModel(modelPGPanner);
     p->addModel(modelPGQuadPanner);
+    p->addModel(modelPGOctPanner);
     p->addModel(modelPGVCF);
     p->addModel(modelPGStereoVCF);
     p->addModel(modelPGEcho);

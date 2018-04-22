@@ -18,6 +18,10 @@ This is a simple cosine/sine panner.
 
 Quad panner - four mono inputs, each with their own panner and level control. One stereo output mixed from all four inputs.
 
+## PG Oct Panner
+
+Oct (yes 8!) panner, eight mono inputs, each with their own panner and level control. One stereo output mixed from all eight inputs.
+
 ## PG VCF
 
 Voltage Controlled Filter

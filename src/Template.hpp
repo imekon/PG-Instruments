@@ -9,6 +9,7 @@ extern Plugin *plugin;
 extern Model *modelPGSEQ3;
 extern Model *modelPGPanner;
 extern Model *modelPGQuadPanner;
+extern Model *modelPGOctPanner;
 extern Model *modelPGVCF;
 extern Model *modelPGStereoVCF;
 extern Model *modelPGEcho;
