@@ -15,8 +15,7 @@ struct PGStereoPingPongEcho : Module
     
     enum InputIds
     {
-        LEFT_INPUT,
-        RIGHT_INPUT,
+        INPUT,
         NUM_INPUTS
     };
     
@@ -31,8 +30,7 @@ struct PGStereoPingPongEcho : Module
     int writer;
     int writer2;
     int offset;
-    float leftBuffer[BUFFER_SIZE];
-    float rightBuffer[BUFFER_SIZE];
+    float buffer[BUFFER_SIZE];
     
     PGStereoPingPongEcho() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, 0)
     {
@@ -43,8 +41,7 @@ struct PGStereoPingPongEcho : Module
         
         for(int i = 0; i < BUFFER_SIZE; i++)
         {
-            leftBuffer[i] = 0.0f;
-            rightBuffer[i] = 0.0f;
+            buffer[i] = 0.0f;
         }
     }
     
@@ -61,15 +58,12 @@ struct PGStereoPingPongEcho : Module
         
         float input;
 
-        input = inputs[LEFT_INPUT].value;
-        outputs[LEFT_OUTPUT].value = input + leftBuffer[reader];
-        leftBuffer[writer] = input + leftBuffer[writer] * params[FEEDBACK_PARAM].value;
-        leftBuffer[writer2] = input + rightBuffer[writer2] * params[FEEDBACK_PARAM].value / 2.0f;
+        input = inputs[INPUT].value;
+        outputs[LEFT_OUTPUT].value = input * 0.7f + buffer[reader] + buffer[writer];
+        outputs[RIGHT_OUTPUT].value = input * 0.7f + buffer[reader] + buffer[writer2];
         
-        input = inputs[RIGHT_INPUT].value;
-        outputs[RIGHT_OUTPUT].value = input + rightBuffer[reader];
-        rightBuffer[writer] = input + rightBuffer[writer] * params[FEEDBACK_PARAM].value;
-        rightBuffer[writer2] = input + leftBuffer[writer2] * params[FEEDBACK_PARAM].value / 2.0f;
+        buffer[writer] = input + buffer[writer] * params[FEEDBACK_PARAM].value;
+        buffer[writer2] = input + buffer[writer2] * params[FEEDBACK_PARAM].value / 2.0f;
         
         reader++;
         writer++;
@@ -92,8 +86,7 @@ struct PGStereoPingPongEchoWidget : ModuleWidget
 		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-        addInput(Port::create<PJ301MPort>(Vec(30, 100), Port::INPUT, module, PGStereoPingPongEcho::LEFT_INPUT));
-        addInput(Port::create<PJ301MPort>(Vec(30, 140), Port::INPUT, module, PGStereoPingPongEcho::RIGHT_INPUT));
+        addInput(Port::create<PJ301MPort>(Vec(30, 100), Port::INPUT, module, PGStereoPingPongEcho::INPUT));
         
         addParam(ParamWidget::create<RoundBlackKnob>(Vec(70, 100), module, PGStereoPingPongEcho::TIME_PARAM, 0.0f, 1.0f, 0.5f));
         addParam(ParamWidget::create<RoundBlackKnob>(Vec(110, 100), module, PGStereoPingPongEcho::FEEDBACK_PARAM, 0.0f, 1.0f, 0.5f));
