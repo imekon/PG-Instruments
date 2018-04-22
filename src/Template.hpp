@@ -14,4 +14,5 @@ extern Model *modelPGVCF;
 extern Model *modelPGStereoVCF;
 extern Model *modelPGEcho;
 extern Model *modelPGStereoEcho;
+extern Model *modelPGStereoPingPongEcho;
 
