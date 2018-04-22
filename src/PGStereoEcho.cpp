@@ -67,12 +67,12 @@ struct PGStereoEcho : Module
         float input;
 
         input = inputs[LEFT_INPUT].value;
-        outputs[LEFT_OUTPUT].value = input + leftBuffer[reader] * params[FEEDBACK_PARAM].value;
-        leftBuffer[leftWriter] = input;
+        outputs[LEFT_OUTPUT].value = input + leftBuffer[reader];
+        leftBuffer[leftWriter] = input + leftBuffer[leftWriter] * params[FEEDBACK_PARAM].value;
         
         input = inputs[RIGHT_INPUT].value;
-        outputs[RIGHT_OUTPUT].value = input + rightBuffer[reader] * params[FEEDBACK_PARAM].value;
-        rightBuffer[rightWriter] = input;
+        outputs[RIGHT_OUTPUT].value = input + rightBuffer[reader];
+        rightBuffer[rightWriter] = input + rightBuffer[rightWriter] * params[FEEDBACK_PARAM].value;
         
         reader++;
         leftWriter++;
@@ -100,7 +100,7 @@ struct PGStereoEchoWidget : ModuleWidget
         
         addParam(ParamWidget::create<RoundBlackKnob>(Vec(70, 100), module, PGStereoEcho::TIME_PARAM, 0.0f, 1.0f, 0.5f));
         addParam(ParamWidget::create<RoundBlackKnob>(Vec(110, 100), module, PGStereoEcho::FEEDBACK_PARAM, 0.0f, 1.0f, 0.5f));
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(110, 140), module, PGStereoEcho::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
+        addParam(ParamWidget::create<RoundBlackKnob>(Vec(70, 140), module, PGStereoEcho::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
         
         addOutput(Port::create<PJ301MPort>(Vec(150, 100), Port::OUTPUT, module, PGStereoEcho::LEFT_OUTPUT));
         addOutput(Port::create<PJ301MPort>(Vec(150, 140), Port::OUTPUT, module, PGStereoEcho::RIGHT_OUTPUT));

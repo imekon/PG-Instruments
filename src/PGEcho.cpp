@@ -51,8 +51,8 @@ struct PGEcho : Module
         
         float input = inputs[INPUT].value;
 
-        outputs[OUTPUT].value = input + buffer[reader] * params[FEEDBACK_PARAM].value;
-        buffer[writer] = input;
+        outputs[OUTPUT].value = input + buffer[reader];
+        buffer[writer] = input + buffer[writer] * params[FEEDBACK_PARAM].value;
         
         reader++;
         writer++;
