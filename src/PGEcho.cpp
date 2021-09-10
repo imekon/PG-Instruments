@@ -29,8 +29,12 @@ struct PGEcho : Module
     int offset;
     float buffer[BUFFER_SIZE];
     
-    PGEcho() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, 0)
-    {
+    PGEcho() {
+        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
+
+        configParam(TIME_PARAM, 0.0f, 1.0f, 0.5f);
+        configParam(FEEDBACK_PARAM, 0.0f, 1.0f, 0.5f);
+
         reader = 0;
         offset = BUFFER_SIZE >> 1;
         writer = offset;
@@ -39,9 +43,9 @@ struct PGEcho : Module
             buffer[i] = 0.0f;
     }
     
-    void step() override
+    void process(const ProcessArgs& args) override
     {
-        int echoOffset = (int)(params[TIME_PARAM].value * BUFFER_SIZE);
+        int echoOffset = (int)(params[TIME_PARAM].getValue() * BUFFER_SIZE);
         
         if (echoOffset != offset)
         {
@@ -49,10 +53,10 @@ struct PGEcho : Module
             writer = (reader - offset) & BUFFER_MASK;
         }
         
-        float input = inputs[INPUT].value;
+        float input = inputs[INPUT].getVoltage();
 
-        outputs[OUTPUT].value = input + buffer[reader];
-        buffer[writer] = input + buffer[writer] * params[FEEDBACK_PARAM].value;
+        outputs[OUTPUT].setVoltage(input + buffer[reader]);
+        buffer[writer] = input + buffer[writer] * params[FEEDBACK_PARAM].getValue();
         
         reader++;
         writer++;
@@ -64,20 +68,20 @@ struct PGEcho : Module
 
 struct PGEchoWidget : ModuleWidget
 {
-    PGEchoWidget(PGEcho *module) : ModuleWidget(module)
-    {
-        setPanel(SVG::load(assetPlugin(plugin, "res/PGEcho.svg")));
+    PGEchoWidget(PGEcho *module) {
+        setModule(module);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PGEcho.svg")));
         
-  		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+  		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-        addInput(Port::create<PJ301MPort>(Vec(30, 100), Port::INPUT, module, PGEcho::INPUT));
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(70, 100), module, PGEcho::TIME_PARAM, 0.0f, 1.0f, 0.5f));
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(110, 100), module, PGEcho::FEEDBACK_PARAM, 0.0f, 1.0f, 0.5f));
-        addOutput(Port::create<PJ301MPort>(Vec(150, 100), Port::OUTPUT, module, PGEcho::OUTPUT));
+        addInput(createInput<PJ301MPort>(Vec(30, 100), module, PGEcho::INPUT));
+        addParam(createParam<RoundBlackKnob>(Vec(70, 100), module, PGEcho::TIME_PARAM));
+        addParam(createParam<RoundBlackKnob>(Vec(110, 100), module, PGEcho::FEEDBACK_PARAM));
+        addOutput(createOutput<PJ301MPort>(Vec(150, 100), module, PGEcho::OUTPUT));
     }
 };
 
-Model *modelPGEcho = Model::create<PGEcho, PGEchoWidget>("PG-Instruments", "PGEcho", "PG Echo", DELAY_TAG);
+Model *modelPGEcho = createModel<PGEcho, PGEchoWidget>("PGEcho");

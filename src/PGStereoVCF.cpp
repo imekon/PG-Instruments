@@ -37,13 +37,18 @@ struct PGStereoVCF : Module
     float buf3[2];
     float feedback;
     
-    PGStereoVCF() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, 0)
-    {
+    PGStereoVCF() {
+        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
+        configParam(FREQUENCY_PARAM, 0.0f, 1.0f, 0.5f);
+        configParam(RESONANCE_PARAM, 0.0f, 0.99f, 0.5f);
+
         for(int i = 0; i < 2; i++)
+        {
             buf0[i] = buf1[i] = buf2[i] = buf3[i] = 0.0f;
+        }
     }
     
-    void step() override
+    void process(const ProcessArgs& args) override
     {
         calculateFeedback();
         
@@ -54,9 +59,9 @@ struct PGStereoVCF : Module
             float input;
             
             if (i)
-                input = inputs[RIGHT_INPUT].value;
+                input = inputs[RIGHT_INPUT].getVoltage();
             else
-                input = inputs[LEFT_INPUT].value;
+                input = inputs[LEFT_INPUT].getVoltage();
             
             buf0[i] += calcCutoff * (input - buf0[i] + feedback * (buf0[i] - buf1[i]));
             buf1[i] += calcCutoff * (buf0[i] - buf1[i]);
@@ -65,57 +70,57 @@ struct PGStereoVCF : Module
             
             if (i)
             {
-                outputs[RIGHT_LOWPASS_OUTPUT].value = buf3[i];
-                outputs[RIGHT_BANDPASS_OUTPUT].value = buf0[i] - buf3[i];
-                outputs[RIGHT_HIGHPASS_OUTPUT].value = inputs[RIGHT_INPUT].value - buf3[i];
+                outputs[RIGHT_LOWPASS_OUTPUT].setVoltage(buf3[i]);
+                outputs[RIGHT_BANDPASS_OUTPUT].setVoltage(buf0[i] - buf3[i]);
+                outputs[RIGHT_HIGHPASS_OUTPUT].setVoltage(inputs[RIGHT_INPUT].getVoltage() - buf3[i]);
             }
             else
             {
-                outputs[LEFT_LOWPASS_OUTPUT].value = buf3[i];
-                outputs[LEFT_BANDPASS_OUTPUT].value = buf0[i] - buf3[i];
-                outputs[LEFT_HIGHPASS_OUTPUT].value = inputs[LEFT_INPUT].value - buf3[i];
+                outputs[LEFT_LOWPASS_OUTPUT].setVoltage(buf3[i]);
+                outputs[LEFT_BANDPASS_OUTPUT].setVoltage(buf0[i] - buf3[i]);
+                outputs[LEFT_HIGHPASS_OUTPUT].setVoltage(inputs[LEFT_INPUT].getVoltage() - buf3[i]);
             }
         }
     }
     
     void calculateFeedback()
     {
-        feedback = params[RESONANCE_PARAM].value + params[RESONANCE_PARAM].value / (1.0f - getCalculatedCutoff());
+        feedback = params[RESONANCE_PARAM].getValue() + params[RESONANCE_PARAM].getValue() / (1.0f - getCalculatedCutoff());
     }
     
     float getCalculatedCutoff()
     {
-        return fmax(fmin(params[FREQUENCY_PARAM].value + inputs[CUTOFF].value, 0.99f), 0.01f);
+        return fmax(fmin(params[FREQUENCY_PARAM].getValue() + inputs[CUTOFF].getVoltage(), 0.99f), 0.01f);
     }
 };
 
 struct PGStereoVCFWidget : ModuleWidget
 {
-    PGStereoVCFWidget(PGStereoVCF *module) : ModuleWidget(module)
-    {
-        setPanel(SVG::load(assetPlugin(plugin, "res/PGStereoVCF.svg")));
+    PGStereoVCFWidget(PGStereoVCF *module) {
+        setModule(module);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PGStereoVCF.svg")));
         
-  		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+  		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-        addInput(Port::create<PJ301MPort>(Vec(20, 100), Port::INPUT, module, PGStereoVCF::LEFT_INPUT));
-        addInput(Port::create<PJ301MPort>(Vec(20, 140), Port::INPUT, module, PGStereoVCF::RIGHT_INPUT));
+        addInput(createInput<PJ301MPort>(Vec(20, 100), module, PGStereoVCF::LEFT_INPUT));
+        addInput(createInput<PJ301MPort>(Vec(20, 140), module, PGStereoVCF::RIGHT_INPUT));
         
-        addInput(Port::create<PJ301MPort>(Vec(20, 180), Port::INPUT, module, PGStereoVCF::CUTOFF));
+        addInput(createInput<PJ301MPort>(Vec(20, 180), module, PGStereoVCF::CUTOFF));
 
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(50, 100), module, PGStereoVCF::FREQUENCY_PARAM, 0.0f, 1.0f, 0.5f));
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(90, 100), module, PGStereoVCF::RESONANCE_PARAM, 0.0f, 0.99f, 0.5f));
+        addParam(createParam<RoundBlackKnob>(Vec(50, 100), module, PGStereoVCF::FREQUENCY_PARAM));
+        addParam(createParam<RoundBlackKnob>(Vec(90, 100), module, PGStereoVCF::RESONANCE_PARAM));
 
-        addOutput(Port::create<PJ301MPort>(Vec(130, 100), Port::OUTPUT, module, PGStereoVCF::LEFT_LOWPASS_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(130, 140), Port::OUTPUT, module, PGStereoVCF::LEFT_BANDPASS_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(130, 180), Port::OUTPUT, module, PGStereoVCF::LEFT_HIGHPASS_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(130, 100), module, PGStereoVCF::LEFT_LOWPASS_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(130, 140), module, PGStereoVCF::LEFT_BANDPASS_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(130, 180), module, PGStereoVCF::LEFT_HIGHPASS_OUTPUT));
 
-        addOutput(Port::create<PJ301MPort>(Vec(160, 100), Port::OUTPUT, module, PGStereoVCF::RIGHT_LOWPASS_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(160, 140), Port::OUTPUT, module, PGStereoVCF::RIGHT_BANDPASS_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(160, 180), Port::OUTPUT, module, PGStereoVCF::RIGHT_HIGHPASS_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(160, 100), module, PGStereoVCF::RIGHT_LOWPASS_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(160, 140), module, PGStereoVCF::RIGHT_BANDPASS_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(160, 180), module, PGStereoVCF::RIGHT_HIGHPASS_OUTPUT));
     }
 };
 
-Model *modelPGStereoVCF = Model::create<PGStereoVCF, PGStereoVCFWidget>("PG-Instruments", "PGStereoVCF", "PG Stereo VCF", ATTENUATOR_TAG);
+Model *modelPGStereoVCF = createModel<PGStereoVCF, PGStereoVCFWidget>("PGStereoVCF");

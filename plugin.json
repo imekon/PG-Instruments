@@ -1,0 +1,90 @@
+{
+  "slug": "PG-Instruments",
+  "name": "PG-Instruments",
+  "version": "1.0.0",
+  "license": "CC0-1.0",
+  "brand": "PG-Instruments",
+  "author": "Pete Goodwin",
+  "authorEmail": "",
+  "authorUrl": "https://github.com/imekon/PG-Instruments",
+  "pluginUrl": "https://github.com/imekon/PG-Instruments",
+  "manualUrl": "https://github.com/imekon/PG-Instruments",
+  "sourceUrl": "https://github.com/imekon/PG-Instruments",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "PGEcho",
+      "name": "PGEcho",
+      "description": "Echo/delay.",
+      "tags": [
+        "Effect"
+      ]
+    },
+    {
+      "slug": "PGOctPanner",
+      "name": "PGOctPanner",
+      "description": "Oct (yes 8!) panner, eight mono inputs, each with their own panner and level control",
+      "tags": [
+        "Mixer",
+        "Panning"
+      ]
+    },
+    {
+      "slug": "PGPanner",
+      "name": "PGPanner",
+      "description": "Simple stereo panner, mono in, stereo out.",
+      "tags": [
+        "Panning"
+      ]
+    },
+    {
+      "slug": "PGQuadPanner",
+      "name": "PGQuadPanner",
+      "description": "Quad panner - four mono inputs, each with their own panner and level control.",
+      "tags": [
+        "Panning"
+      ]
+    },
+    {
+      "slug": "PGSEQ3",
+      "name": "PGSEQ3",
+      "description": "An implementation of SEQ-3 with 16 steps instead of 8.",
+      "tags": [
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "PGStereoEcho",
+      "name": "PGStereoEcho",
+      "description": "Stereo echo/delay.",
+      "tags": [
+        "Effect"
+      ]
+    },
+    {
+      "slug": "PGStereoPingPongEcho",
+      "name": "PGStereoPingPongEcho",
+      "description": "Stereo ping pong echo/delay.",
+      "tags": [
+        "Effect"
+      ]
+    },
+    {
+      "slug": "PGStereoVCF",
+      "name": "PGStereoVCF",
+      "description": "Voltage Controlled Stereo Filter.",
+      "tags": [
+        "Filter"
+      ]
+    },
+    {
+      "slug": "PGVCF",
+      "name": "PGVCF",
+      "description": "Voltage Controlled Filter.",
+      "tags": [
+        "Filter"
+      ]
+    }
+  ]
+}
