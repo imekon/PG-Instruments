@@ -1,4 +1,3 @@
-#include "dsp/digital.hpp"
 #include "Template.hpp"
 
 #define NUM_SEQ_STEPS 16
@@ -48,17 +47,28 @@ struct PGSEQ3 : Module
 	};
 
 	bool running = true;
-	SchmittTrigger clockTrigger;
-	SchmittTrigger runningTrigger;
-	SchmittTrigger resetTrigger;
-	SchmittTrigger gateTriggers[NUM_SEQ_STEPS];
+	dsp::SchmittTrigger clockTrigger;
+	dsp::SchmittTrigger runningTrigger;
+	dsp::SchmittTrigger resetTrigger;
+	dsp::SchmittTrigger gateTriggers[NUM_SEQ_STEPS];
 	/** Phase of internal LFO */
 	float phase = 0.f;
 	int index = 0;
 	bool gates[NUM_SEQ_STEPS] = {};
 
-	PGSEQ3() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) 
-    {
+	PGSEQ3() {
+    	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(CLOCK_PARAM, -2.0f, 6.0f, 2.0f);
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f);
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f);
+		configParam(STEPS_PARAM, 1.0f, (float)NUM_SEQ_STEPS, (float)NUM_SEQ_STEPS);
+		for (int i = 0; i < NUM_SEQ_STEPS; i++) 
+        {
+        	configParam(ROW1_PARAM + i, 0.0f, 10.0f, 1.0f);
+        	configParam(ROW2_PARAM + i, 0.0f, 10.0f, 0.0f);
+        	configParam(ROW3_PARAM + i, 0.0f, 10.0f, 0.0f);
+        	configParam(GATE_PARAM + i, 0.0f, 1.0f, 0.0f);
+        }
 		onReset();
 	}
 
@@ -74,11 +84,11 @@ struct PGSEQ3 : Module
     {
 		for (int i = 0; i < NUM_SEQ_STEPS; i++)
         {
-			gates[i] = (randomUniform() > 0.5f);
+			gates[i] = (random::uniform() > 0.5f);
 		}
 	}
 
-	json_t *toJson() override 
+	json_t *dataToJson() override 
     {
 		json_t *rootJ = json_object();
 
@@ -96,7 +106,7 @@ struct PGSEQ3 : Module
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override 
+	void dataFromJson(json_t *rootJ) override 
     {
 		// running
 		json_t *runningJ = json_object_get(rootJ, "running");
@@ -118,17 +128,17 @@ struct PGSEQ3 : Module
 
 	void setIndex(int index) 
     {
-		int numSteps = (int) clamp(roundf(params[STEPS_PARAM].value + inputs[STEPS_INPUT].value), 1.0f, (float)NUM_SEQ_STEPS);
+		int numSteps = (int) clamp(roundf(params[STEPS_PARAM].getValue() + inputs[STEPS_INPUT].getVoltage()), 1.0f, (float)NUM_SEQ_STEPS);
 		phase = 0.f;
 		this->index = index;
 		if (this->index >= numSteps)
 			this->index = 0;
 	}
 
-	void step() override 
+	void process(const ProcessArgs& args) override 
     {
 		// Run
-		if (runningTrigger.process(params[RUN_PARAM].value))
+		if (runningTrigger.process(params[RUN_PARAM].getValue()))
         {
 			running = !running;
 		}
@@ -136,10 +146,10 @@ struct PGSEQ3 : Module
 		bool gateIn = false;
 		if (running) 
         {
-			if (inputs[EXT_CLOCK_INPUT].active) 
+			if (inputs[EXT_CLOCK_INPUT].isConnected()) 
             {
 				// External clock
-				if (clockTrigger.process(inputs[EXT_CLOCK_INPUT].value)) 
+				if (clockTrigger.process(inputs[EXT_CLOCK_INPUT].getVoltage())) 
                 {
 					setIndex(index + 1);
 				}
@@ -148,8 +158,8 @@ struct PGSEQ3 : Module
 			else
             {
 				// Internal clock
-				float clockTime = powf(2.0f, params[CLOCK_PARAM].value + inputs[CLOCK_INPUT].value);
-				phase += clockTime * engineGetSampleTime();
+				float clockTime = powf(2.0f, params[CLOCK_PARAM].getValue() + inputs[CLOCK_INPUT].getVoltage());
+				phase += clockTime * args.sampleTime;
 				if (phase >= 1.0f) 
                 {
 					setIndex(index + 1);
@@ -159,7 +169,7 @@ struct PGSEQ3 : Module
 		}
 
 		// Reset
-		if (resetTrigger.process(params[RESET_PARAM].value + inputs[RESET_INPUT].value)) 
+		if (resetTrigger.process(params[RESET_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) 
         {
 			setIndex(0);
 		}
@@ -167,22 +177,22 @@ struct PGSEQ3 : Module
 		// Gate buttons
 		for (int i = 0; i < NUM_SEQ_STEPS; i++) 
         {
-			if (gateTriggers[i].process(params[GATE_PARAM + i].value)) 
+			if (gateTriggers[i].process(params[GATE_PARAM + i].getValue())) 
             {
 				gates[i] = !gates[i];
 			}
-			outputs[GATE_OUTPUT + i].value = (running && gateIn && i == index && gates[i]) ? 10.0f : 0.0f;
-			lights[GATE_LIGHTS + i].setBrightnessSmooth((gateIn && i == index) ? (gates[i] ? 1.f : 0.33) : (gates[i] ? 0.66 : 0.0));
+			outputs[GATE_OUTPUT + i].setVoltage((running && gateIn && i == index && gates[i]) ? 10.0f : 0.0f);
+			lights[GATE_LIGHTS + i].setSmoothBrightness((gateIn && i == index) ? (gates[i] ? 1.f : 0.33) : (gates[i] ? 0.66 : 0.0), args.sampleTime);
 		}
 
 		// Outputs
-		outputs[ROW1_OUTPUT].value = params[ROW1_PARAM + index].value;
-		outputs[ROW2_OUTPUT].value = params[ROW2_PARAM + index].value;
-		outputs[ROW3_OUTPUT].value = params[ROW3_PARAM + index].value;
-		outputs[GATES_OUTPUT].value = (gateIn && gates[index]) ? 10.0f : 0.0f;
+		outputs[ROW1_OUTPUT].setVoltage(params[ROW1_PARAM + index].getValue());
+		outputs[ROW2_OUTPUT].setVoltage(params[ROW2_PARAM + index].getValue());
+		outputs[ROW3_OUTPUT].setVoltage(params[ROW3_PARAM + index].getValue());
+		outputs[GATES_OUTPUT].setVoltage((gateIn && gates[index]) ? 10.0f : 0.0f);
 		lights[RUNNING_LIGHT].value = (running);
-		lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
-		lights[GATES_LIGHT].setBrightnessSmooth(gateIn);
+		lights[RESET_LIGHT].setSmoothBrightness(resetTrigger.isHigh(), args.sampleTime);
+		lights[GATES_LIGHT].setSmoothBrightness(gateIn, args.sampleTime);
 		lights[ROW_LIGHTS].value = outputs[ROW1_OUTPUT].value / 10.0f;
 		lights[ROW_LIGHTS + 1].value = outputs[ROW2_OUTPUT].value / 10.0f;
 		lights[ROW_LIGHTS + 2].value = outputs[ROW3_OUTPUT].value / 10.0f;
@@ -192,25 +202,26 @@ struct PGSEQ3 : Module
 
 struct PGSEQ3Widget : ModuleWidget 
 {
-	PGSEQ3Widget(PGSEQ3 *module) : ModuleWidget(module) 
-    {
-		setPanel(SVG::load(assetPlugin(plugin, "res/PGSEQ3.svg")));
+	PGSEQ3Widget(PGSEQ3 *module) {
+    	setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PGSEQ3.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-		addParam(ParamWidget::create<RoundBlackKnob>(Vec(18, 56), module, PGSEQ3::CLOCK_PARAM, -2.0f, 6.0f, 2.0f));
-		addParam(ParamWidget::create<LEDButton>(Vec(60, 61-1), module, PGSEQ3::RUN_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(64.4f, 64.4f), module, PGSEQ3::RUNNING_LIGHT));
-		addParam(ParamWidget::create<LEDButton>(Vec(99, 61-1), module, PGSEQ3::RESET_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(103.4f, 64.4f), module, PGSEQ3::RESET_LIGHT));
-		addParam(ParamWidget::create<RoundBlackSnapKnob>(Vec(132, 56), module, PGSEQ3::STEPS_PARAM, 1.0f, (float)NUM_SEQ_STEPS, (float)NUM_SEQ_STEPS));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(179.4f, 64.4f), module, PGSEQ3::GATES_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(218.4f, 64.4f), module, PGSEQ3::ROW_LIGHTS));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(256.4f, 64.4f), module, PGSEQ3::ROW_LIGHTS + 1));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(295.4f, 64.4f), module, PGSEQ3::ROW_LIGHTS + 2));
+		addParam(createParam<RoundBlackKnob>(Vec(18, 56), module, PGSEQ3::CLOCK_PARAM));
+		addParam(createParam<LEDButton>(Vec(60, 61-1), module, PGSEQ3::RUN_PARAM));
+		addParam(createParam<LEDButton>(Vec(99, 61-1), module, PGSEQ3::RESET_PARAM));
+		addParam(createParam<RoundBlackSnapKnob>(Vec(132, 56), module, PGSEQ3::STEPS_PARAM));
+
+		addChild(createLight<MediumLight<GreenLight>>(Vec(64.4f, 64.4f), module, PGSEQ3::RUNNING_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(103.4f, 64.4f), module, PGSEQ3::RESET_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(179.4f, 64.4f), module, PGSEQ3::GATES_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(218.4f, 64.4f), module, PGSEQ3::ROW_LIGHTS));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(256.4f, 64.4f), module, PGSEQ3::ROW_LIGHTS + 1));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(295.4f, 64.4f), module, PGSEQ3::ROW_LIGHTS + 2));
 
 		static const float portX[NUM_SEQ_STEPS] = 
         {
@@ -220,25 +231,25 @@ struct PGSEQ3Widget : ModuleWidget
             480, 519, 557, 596
         };
         
-		addInput(Port::create<PJ301MPort>(Vec(portX[0]-1, 98), Port::INPUT, module, PGSEQ3::CLOCK_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(portX[1]-1, 98), Port::INPUT, module, PGSEQ3::EXT_CLOCK_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(portX[2]-1, 98), Port::INPUT, module, PGSEQ3::RESET_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(portX[3]-1, 98), Port::INPUT, module, PGSEQ3::STEPS_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(portX[4]-1, 98), Port::OUTPUT, module, PGSEQ3::GATES_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(portX[5]-1, 98), Port::OUTPUT, module, PGSEQ3::ROW1_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(portX[6]-1, 98), Port::OUTPUT, module, PGSEQ3::ROW2_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(portX[7]-1, 98), Port::OUTPUT, module, PGSEQ3::ROW3_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(portX[0]-1, 98), module, PGSEQ3::CLOCK_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(portX[1]-1, 98), module, PGSEQ3::EXT_CLOCK_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(portX[2]-1, 98), module, PGSEQ3::RESET_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(portX[3]-1, 98), module, PGSEQ3::STEPS_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(portX[4]-1, 98), module, PGSEQ3::GATES_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(portX[5]-1, 98), module, PGSEQ3::ROW1_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(portX[6]-1, 98), module, PGSEQ3::ROW2_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(portX[7]-1, 98), module, PGSEQ3::ROW3_OUTPUT));
 
 		for (int i = 0; i < NUM_SEQ_STEPS; i++) 
         {
-			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 157), module, PGSEQ3::ROW1_PARAM + i, 0.0f, 10.0f, 1.0f));
-			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 198), module, PGSEQ3::ROW2_PARAM + i, 0.0f, 10.0f, 0.0f));
-			addParam(ParamWidget::create<RoundBlackKnob>(Vec(portX[i]-2, 240), module, PGSEQ3::ROW3_PARAM + i, 0.0f, 10.0f, 0.0f));
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+2, 278-1), module, PGSEQ3::GATE_PARAM + i, 0.0f, 1.0f, 0.0f));
-			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+6.4f, 281.4f), module, PGSEQ3::GATE_LIGHTS + i));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i]-1, 307), Port::OUTPUT, module, PGSEQ3::GATE_OUTPUT + i));
+			addParam(createParam<RoundBlackKnob>(Vec(portX[i]-2, 157), module, PGSEQ3::ROW1_PARAM + i));
+			addParam(createParam<RoundBlackKnob>(Vec(portX[i]-2, 198), module, PGSEQ3::ROW2_PARAM + i));
+			addParam(createParam<RoundBlackKnob>(Vec(portX[i]-2, 240), module, PGSEQ3::ROW3_PARAM + i));
+			addParam(createParam<LEDButton>(Vec(portX[i]+2, 278-1), module, PGSEQ3::GATE_PARAM + i));
+			addChild(createLight<MediumLight<GreenLight>>(Vec(portX[i]+6.4f, 281.4f), module, PGSEQ3::GATE_LIGHTS + i));
+			addOutput(createOutput<PJ301MPort>(Vec(portX[i]-1, 307), module, PGSEQ3::GATE_OUTPUT + i));
 		}
 	}
 };
 
-Model *modelPGSEQ3 = Model::create<PGSEQ3, PGSEQ3Widget>("PG-Instruments", "PGSEQ3", "PG-SEQ-3", SEQUENCER_TAG);
+Model *modelPGSEQ3 = createModel<PGSEQ3, PGSEQ3Widget>("PGSEQ3");

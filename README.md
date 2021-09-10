@@ -1,4 +1,3 @@
-
 # PG Instruments
 
 ## PG-SEQ-3 plugin
@@ -37,3 +36,7 @@ Echo/delay
 ## PG Stereo Echo
 
 Stereo echo/delay
+
+# VCV Rack v1 version
+
+Migration of plugin to work with VCV Rack v1 done by [Alan Holding](https://github.com/alanholding).

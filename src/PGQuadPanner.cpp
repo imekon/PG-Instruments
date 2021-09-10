@@ -29,20 +29,25 @@ struct PGQuadPanner : Module
     
     //float panning[NUM_PANNERS] = { 0.5f, 0.5f, 0.5f, 0.5f };
     
-    PGQuadPanner() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, 0)
-    {
+    PGQuadPanner() {
+        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
+        for(int i = 0; i < NUM_PANNERS; i++)
+        {
+            configParam(PAN_PARAM + i, 0.0f, 1.0, 0.5f);
+            configParam(LEVEL_PARAM + i, 0.0f, 1.0f, 0.7f);
+        }
     }
     
-    void step() override
+    void process(const ProcessArgs& args) override
     {
         float left = 0.0f;
         float right = 0.0f;
         
         for(int i = 0; i < NUM_PANNERS; i++)
         {
-            float input = inputs[INPUT + i].value;
-            float panning = params[PAN_PARAM + i].value;
-            float level = params[LEVEL_PARAM + i].value;
+            float input = inputs[INPUT + i].getVoltage();
+            float panning = params[PAN_PARAM + i].getValue();
+            float level = params[LEVEL_PARAM + i].getValue();
             
             float l, r;
             
@@ -52,8 +57,8 @@ struct PGQuadPanner : Module
             right += r;
         }
         
-        outputs[LEFT_OUTPUT].value = left;
-        outputs[RIGHT_OUTPUT].value = right;
+        outputs[LEFT_OUTPUT].setVoltage(left);
+        outputs[RIGHT_OUTPUT].setVoltage(right);
     }
     
     void pan(float input, float panning, float level, float &left, float &right)
@@ -65,25 +70,25 @@ struct PGQuadPanner : Module
 
 struct PGQuadPannerWidget : ModuleWidget
 {
-    PGQuadPannerWidget(PGQuadPanner *module) : ModuleWidget(module)
-    {
-        setPanel(SVG::load(assetPlugin(plugin, "res/PGQuadPanner.svg")));
+    PGQuadPannerWidget(PGQuadPanner *module) {
+        setModule(module);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PGQuadPanner.svg")));
         
-  		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+  		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
         for(int i = 0; i < NUM_PANNERS; i++)
         {
-            addInput(Port::create<PJ301MPort>(Vec(LEFT_MARGIN, TOP_MARGIN + SPACING * i), Port::INPUT, module, PGQuadPanner::INPUT + i));
-            addParam(ParamWidget::create<RoundBlackKnob>(Vec(LEFT_MARGIN + 40, TOP_MARGIN + SPACING * i), module, PGQuadPanner::PAN_PARAM + i, 0.0f, 1.0, 0.5f));
-            addParam(ParamWidget::create<RoundBlackKnob>(Vec(LEFT_MARGIN + 80, TOP_MARGIN + SPACING * i), module, PGQuadPanner::LEVEL_PARAM + i, 0.0f, 1.0f, 0.7f));
+            addInput(createInput<PJ301MPort>(Vec(LEFT_MARGIN, TOP_MARGIN + SPACING * i), module, PGQuadPanner::INPUT + i));
+            addParam(createParam<RoundBlackKnob>(Vec(LEFT_MARGIN + 40, TOP_MARGIN + SPACING * i), module, PGQuadPanner::PAN_PARAM + i));
+            addParam(createParam<RoundBlackKnob>(Vec(LEFT_MARGIN + 80, TOP_MARGIN + SPACING * i), module, PGQuadPanner::LEVEL_PARAM + i));
         }
         
-        addOutput(Port::create<PJ301MPort>(Vec(LEFT_MARGIN + 120, TOP_MARGIN + SPACING), Port::OUTPUT, module, PGQuadPanner::LEFT_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(LEFT_MARGIN + 120, TOP_MARGIN + SPACING * 2), Port::OUTPUT, module, PGQuadPanner::RIGHT_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(LEFT_MARGIN + 120, TOP_MARGIN + SPACING), module, PGQuadPanner::LEFT_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(LEFT_MARGIN + 120, TOP_MARGIN + SPACING * 2), module, PGQuadPanner::RIGHT_OUTPUT));
     }
 };
 
-Model *modelPGQuadPanner = Model::create<PGQuadPanner, PGQuadPannerWidget>("PG-Instruments", "PGQuadPanner", "PG Quad Panner", ATTENUATOR_TAG);
+Model *modelPGQuadPanner = createModel<PGQuadPanner, PGQuadPannerWidget>("PGQuadPanner");

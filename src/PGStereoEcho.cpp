@@ -36,8 +36,12 @@ struct PGStereoEcho : Module
     float leftBuffer[BUFFER_SIZE];
     float rightBuffer[BUFFER_SIZE];
     
-    PGStereoEcho() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, 0)
-    {
+    PGStereoEcho() {
+        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
+        configParam(TIME_PARAM, 0.0f, 1.0f, 0.5f);
+        configParam(FEEDBACK_PARAM, 0.0f, 1.0f, 0.5f);
+        configParam(OFFSET_PARAM, 0.0f, 1.0f, 0.0f);
+
         reader = 0;
         offset = BUFFER_SIZE >> 1;
         rightOffset = 0;
@@ -51,10 +55,10 @@ struct PGStereoEcho : Module
         }
     }
     
-    void step() override
+    void process(const ProcessArgs& args) override
     {
-        int timeParam = (int)(params[TIME_PARAM].value * BUFFER_SIZE);
-        int offsetParam = (int)(params[OFFSET_PARAM].value * HALF_BUFFER_SIZE);
+        int timeParam = (int)(params[TIME_PARAM].getValue() * BUFFER_SIZE);
+        int offsetParam = (int)(params[OFFSET_PARAM].getValue() * HALF_BUFFER_SIZE);
         
         if (timeParam != offset || offsetParam != rightOffset)
         {
@@ -66,13 +70,13 @@ struct PGStereoEcho : Module
         
         float input;
 
-        input = inputs[LEFT_INPUT].value;
-        outputs[LEFT_OUTPUT].value = input + leftBuffer[reader];
-        leftBuffer[leftWriter] = input + leftBuffer[leftWriter] * params[FEEDBACK_PARAM].value;
+        input = inputs[LEFT_INPUT].getVoltage();
+        outputs[LEFT_OUTPUT].setVoltage(input + leftBuffer[reader]);
+        leftBuffer[leftWriter] = input + leftBuffer[leftWriter] * params[FEEDBACK_PARAM].getValue();
         
-        input = inputs[RIGHT_INPUT].value;
-        outputs[RIGHT_OUTPUT].value = input + rightBuffer[reader];
-        rightBuffer[rightWriter] = input + rightBuffer[rightWriter] * params[FEEDBACK_PARAM].value;
+        input = inputs[RIGHT_INPUT].getVoltage();
+        outputs[RIGHT_OUTPUT].setVoltage(input + rightBuffer[reader]);
+        rightBuffer[rightWriter] = input + rightBuffer[rightWriter] * params[FEEDBACK_PARAM].getValue();
         
         reader++;
         leftWriter++;
@@ -86,25 +90,25 @@ struct PGStereoEcho : Module
 
 struct PGStereoEchoWidget : ModuleWidget
 {
-    PGStereoEchoWidget(PGStereoEcho *module) : ModuleWidget(module)
-    {
-        setPanel(SVG::load(assetPlugin(plugin, "res/PGStereoEcho.svg")));
+    PGStereoEchoWidget(PGStereoEcho *module) {
+        setModule(module);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PGStereoEcho.svg")));
         
-  		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+  		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-        addInput(Port::create<PJ301MPort>(Vec(30, 100), Port::INPUT, module, PGStereoEcho::LEFT_INPUT));
-        addInput(Port::create<PJ301MPort>(Vec(30, 140), Port::INPUT, module, PGStereoEcho::RIGHT_INPUT));
+        addInput(createInput<PJ301MPort>(Vec(30, 100), module, PGStereoEcho::LEFT_INPUT));
+        addInput(createInput<PJ301MPort>(Vec(30, 140), module, PGStereoEcho::RIGHT_INPUT));
         
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(70, 100), module, PGStereoEcho::TIME_PARAM, 0.0f, 1.0f, 0.5f));
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(110, 100), module, PGStereoEcho::FEEDBACK_PARAM, 0.0f, 1.0f, 0.5f));
-        addParam(ParamWidget::create<RoundBlackKnob>(Vec(70, 140), module, PGStereoEcho::OFFSET_PARAM, 0.0f, 1.0f, 0.0f));
+        addParam(createParam<RoundBlackKnob>(Vec(70, 100), module, PGStereoEcho::TIME_PARAM));
+        addParam(createParam<RoundBlackKnob>(Vec(110, 100), module, PGStereoEcho::FEEDBACK_PARAM));
+        addParam(createParam<RoundBlackKnob>(Vec(70, 140), module, PGStereoEcho::OFFSET_PARAM));
         
-        addOutput(Port::create<PJ301MPort>(Vec(150, 100), Port::OUTPUT, module, PGStereoEcho::LEFT_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(150, 140), Port::OUTPUT, module, PGStereoEcho::RIGHT_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(150, 100), module, PGStereoEcho::LEFT_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(150, 140), module, PGStereoEcho::RIGHT_OUTPUT));
     }
 };
 
-Model *modelPGStereoEcho = Model::create<PGStereoEcho, PGStereoEchoWidget>("PG-Instruments", "PGStereoEcho", "PG Stereo Echo", DELAY_TAG);
+Model *modelPGStereoEcho = createModel<PGStereoEcho, PGStereoEchoWidget>("PGStereoEcho");

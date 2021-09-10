@@ -30,8 +30,9 @@ struct PGPanner : Module
     
     float panning = 0.5f;
     
-    PGPanner() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS)
-    {
+    PGPanner() {
+        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+        configParam(PAN_PARAM, 0.0f, 1.0, 0.5f);
         onReset();
     }
     
@@ -44,40 +45,40 @@ struct PGPanner : Module
         
     }
     
-    void step() override
+    void process(const ProcessArgs& args) override
     {
-        panning = params[PAN_PARAM].value;
+        panning = params[PAN_PARAM].getValue();
         
-        float mono = inputs[INPUT].value;
-        float panInput = inputs[PAN_INPUT].value;
+        float mono = inputs[INPUT].getVoltage();
+        float panInput = inputs[PAN_INPUT].getVoltage();
         float pan = panning + panInput;
         
         float leftGain = cosf(pan * M_PI / 2.0f) * mono;
         float rightGain = sinf(pan * M_PI / 2.0f) * mono;
         
-        outputs[LEFT_OUTPUT].value = leftGain;
-        outputs[RIGHT_OUTPUT].value = rightGain;
+        outputs[LEFT_OUTPUT].setVoltage(leftGain);
+        outputs[RIGHT_OUTPUT].setVoltage(rightGain);
     }
 };
 
 struct PGPannerWidget : ModuleWidget
 {
-    PGPannerWidget(PGPanner *module) : ModuleWidget(module)
-    {
-        setPanel(SVG::load(assetPlugin(plugin, "res/PGPanner.svg")));
+    PGPannerWidget(PGPanner *module) {
+        setModule(module);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PGPanner.svg")));
         
-  		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+  		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-        addParam(ParamWidget::create<RoundLargeBlackKnob>(Vec(20, 40), module, PGPanner::PAN_PARAM, 0.0f, 1.0, 0.5f));
+        addParam(createParam<RoundLargeBlackKnob>(Vec(20, 40), module, PGPanner::PAN_PARAM));
         
-        addInput(Port::create<PJ301MPort>(Vec(26, 100), Port::INPUT, module, PGPanner::INPUT));
-        addInput(Port::create<PJ301MPort>(Vec(26, 160), Port::INPUT, module, PGPanner::PAN_INPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(12, 220), Port::OUTPUT, module, PGPanner::LEFT_OUTPUT));
-        addOutput(Port::create<PJ301MPort>(Vec(42, 220), Port::OUTPUT, module, PGPanner::RIGHT_OUTPUT));
+        addInput(createInput<PJ301MPort>(Vec(26, 100), module, PGPanner::INPUT));
+        addInput(createInput<PJ301MPort>(Vec(26, 160), module, PGPanner::PAN_INPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(12, 220), module, PGPanner::LEFT_OUTPUT));
+        addOutput(createOutput<PJ301MPort>(Vec(42, 220), module, PGPanner::RIGHT_OUTPUT));
     }
 };
 
-Model *modelPGPanner = Model::create<PGPanner, PGPannerWidget>("PG-Instruments", "PGPanner", "PG Panner", ATTENUATOR_TAG);
+Model *modelPGPanner = createModel<PGPanner, PGPannerWidget>("PGPanner");
